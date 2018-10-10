@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="58b67937-6f5c-41cd-b6ce-0f91c3ebf3bb" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/ubus_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/ubus_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vcd/parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/vcd/parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vcd/tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/vcd/tracker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vcd/watcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/vcd/watcher.py" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file leaf-file-name="ubus_test.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ubus_test.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="88">
+              <caret line="29" column="33" selection-start-line="29" selection-start-column="33" selection-end-line="29" selection-end-column="33" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="watcher.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/vcd/watcher.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="352">
+              <caret line="34" column="6" selection-start-line="34" selection-start-column="6" selection-end-line="34" selection-end-column="6" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="tracker.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/vcd/tracker.py">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>\#\!python\n\'\'\'\n   Copyright  2013  Gordon McGregor\n\n   Licensed under the Apache License\, Version 2\.0 \(the \&quot;License\&quot;\)\;\n   you may not use this file except in compliance with the License\.\n   You may obtain a copy of the License at\n\n       http\:\/\/www\.apache\.org\/licenses\/LICENSE\-2\.0\n\n   Unless required by applicable law or agreed to in writing\, software\n   distributed under the License is distributed on an \&quot;AS IS\&quot; BASIS\,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND\, either express or implied\.\n   See the License for the specific language governing permissions and\n   limitations under the License\.\n\n\n\n  An example using the vcd parsing library\. This parses VCD output from the UBUS\n  example shipped with the UVM BCL\n\n  This example can be extended to provide interleaved transaction recording\, using\n  UbusTrackers that exist for a transaction lifetime\, or just extend the simple tracker \n  below to filter\/ analyse a subset of signals within the VCD dump\n\n\'\'\'\n\nfrom vcd import \*\n\nclass UbusWatcher\(watcher\.VcdWatcher\)\:\n\n\	in_reset \= False\n\	signals \= \(\'sig_request\'\, \'sig_grant\'\, \'sig_addr\'\, \'sig_size\'\, \n\	\	       \'sig_read\'\, \'sig_write\'\, \'sig_start\'\, \'sig_bip\'\, \n\	           \'sig_data\'\, \'sig_data_out\'\, \'sig_wait\'\, \'sig_error\'\) \n\n\	def __init__\(self\, hierarchy \= None\)\:\n\	\	\# set the hierarchical path first\, prior to adding signals\n\	\	\# so they all get the correct prefix paths\n\	\	self\.set_hierarchy\(hierarchy\)\n\	\	self\.add_signals\(\)\n\n\n\	def add_signals\(self\)\:\n\	\	\# Signals in the \'sensitivity list\' are automatically added to the watch list\n\	\	self\.add_sensitive\(\'sig_clock\'\)\n\	\	self\.add_sensitive\(\'sig_reset\'\)\n\n\	\	for signal in self\.signals\:\n\	\	\	self\.add_watching\(signal\)\n\n\n\	def update\(self\)\:\n\	\	\# Called every time something in the \'sensitivity list\' changes \n\	\	\# Doing effective posedge\/ negedge checks here and reset\/ clock behaviour filtering\n\n\	\	if self\.get_id\(\'sig_reset\'\) in self\.activity and self\.get_active_2val\(\'sig_reset\'\)\:\n\	\	\	print\(\'in RESET\'\)\n\	\	\	self\.in_reset \= True\n\	\	\	return\n\n\	\	if  self\.get_id\(\'sig_reset\'\) in self\.activity and not self\.get_active_2val\(\'sig_reset\'\) and self\.in_reset\:\n\	\	\	print\(\'out of RESET\'\)\n\	\	\	self\.in_reset \= False\n\n\	\	\# Only update on rising clock edge \(clock has changed and is 1\)\n\	\	if  self\.get_id\(\'sig_clock\'\) in self\.activity and self\.get_active_2val\(\'sig_clock\'\) and not self\.in_reset\:\n\	\	\	self\.manage_trackers\(\)\n\n\n\	def start_tracker\(self\)\:\n\	\	\# Simple example \- if we don\'t have an active tracker\, start one\n\	\	if not len\(self\.trackers\)\:\n\	\	\	print\(\'\+\'\,\'\-\'\*40\,\'\+\'\)\n\	\	\	return True\n\n\nclass UbusTracker\(tracker\.VcdTracker\)\:\n\n\n\	skip \= False\n\	def start\(self\)\:\n\	\	self\.states \= \{\'IDLE\'\: self\.idle_state\, \'START\'\:self\.start_state\, \'READ\'\: self\.data_state\, \'WRITE\'\:self\.data_state\}\n\	\	self\.state \= self\.states\[\'IDLE\'\]\n\n\n\	def update\(self\)\:\n\	\	self\.state\(\)\n\n\n\	def idle_state\(self\)\:\n\	\	if eval\(self\.sig_start\)\:\n\	\	\	if not self\.skip\: print\(\'START \@\'\, self\.parser\.now\)\n\	\	\	self\.state \= self\.states\[\'START\'\]\n\n\n\	def start_state\(self\)\:\n\	\	if eval\(self\.sig_write\) \=\= 1\:\n\	\	\	print\(\'WRITE addr\: 0x\%x\' \% v2d\(self\.sig_addr\)\)\n\	\	\	self\.state \= self\.states\[\'WRITE\'\]\n\	\	\	return\n\n\	\	if eval\(self\.sig_read\) \=\= 1\:\n\	\	\	print\(\'READ addr\: 0x\%x\' \% v2d\(self\.sig_addr\)\)\n\	\	\	self\.state \= self\.states\[\'READ\'\]\n\	\	\	return\n\n\	\	self\.skip \= True\n\	\	self\.state \= self\.states\[\'IDLE\'\]\n\n\n\	def data_state\(self\)\:\n\	\	if eval\(self\.sig_wait\)\:\n\	\	\	return\n\	\	print\(\'     DATA\: 0x\%x\' \% v2d\(self\.sig_data\)\)\n\	\	self\.finished \= True\n\n\n\n\# Create a parser object\, attach a watcher within the hierarchy and start running\nvcd \= parser\.VcdParser\(\)\n\nwatcher \= UbusWatcher\(\'ubus_tb_top\.vif\'\)\nwatcher\.set_tracker\(UbusTracker\)\n\nvcd\.register_watcher\(watcher\)\n\n\nwith open\(\'ubus\.vcd\'\) as vcd_file\:\n\	vcd\.parse\(vcd_file\)\n\n\n</find>
+      <find>\t</find>
+      <find>set_hier</find>
+      <find>in_reset</find>
+      <find>tracker</find>
+    </findStrings>
+    <replaceStrings>
+      <replace />
+      <replace />
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/ubus_test.py" />
+        <option value="$PROJECT_DIR$/vcd/watcher.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-190" />
+    <option name="y" value="25" />
+    <option name="width" value="1750" />
+    <option name="height" value="970" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="vcd_parser" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vcd_parser" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vcd_parser" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vcd_parser" type="462c0819:PsiDirectoryNode" />
+              <item name="vcd" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.ubus_test">
+    <configuration name="parser" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="vcd_parser" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/vcd" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/vcd/parser.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
+    <configuration name="ubus_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="vcd_parser" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/ubus_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.ubus_test" />
+      <item itemvalue="Python.parser" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.ubus_test" />
+        <item itemvalue="Python.parser" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="58b67937-6f5c-41cd-b6ce-0f91c3ebf3bb" name="Default" comment="" />
+      <created>1539155869958</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1539155869958</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.30642954" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="Python Console" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info id="Favorites" side_tool="true" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+    </layout>
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/ubus.vcd">
+      <provider selected="true" editor-type-id="LargeFileEditor">
+        <state relative-caret-position="224">
+          <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sample.vcd">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="208">
+          <caret line="13" column="35" lean-forward="true" selection-start-line="13" selection-start-column="35" selection-end-line="13" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vcd/parser.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7">
+          <caret line="258" selection-start-line="258" selection-end-line="258" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vcd/tracker.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ubus_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="88">
+          <caret line="29" column="33" selection-start-line="29" selection-start-column="33" selection-end-line="29" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vcd/watcher.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="352">
+          <caret line="34" column="6" selection-start-line="34" selection-start-column="6" selection-end-line="34" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
