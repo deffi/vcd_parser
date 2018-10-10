@@ -74,17 +74,17 @@ class VcdTracker(object):
 
     def display(self):
 
-        print '+', '-' * 80, '+'
-        print '+', '-'*29, 'clock posedge # %4d (%s:%s)' % (self.trigger_count, self.parser.then, self.parser.now)
-        print '+', '-' * 80, '+'
-        print 'Triggered change'
+        print('+', '-' * 80, '+')
+        print('+', '-'*29, 'clock posedge # %4d (%s:%s)' % (self.trigger_count, self.parser.then, self.parser.now))
+        print('+', '-' * 80, '+')
+        print('Triggered change')
 
         for id in self.activity:
-            print '\t', self.parser.get_xmr(id), self.activity[id]
+            print('\t', self.parser.get_xmr(id), self.activity[id])
 
 
-        print '+', '-' * 80, '+'
-        print 'Previous values'
+        print('+', '-' * 80, '+')
+        print('Previous values')
 
         for id in self.values:
-            print '\t', self.parser.get_xmr(id), self.values[id]
+            print('\t', self.parser.get_xmr(id), self.values[id])

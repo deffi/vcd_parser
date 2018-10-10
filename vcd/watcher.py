@@ -33,145 +33,145 @@ finished their transaction recording.c
 
 
 class VcdWatcher(object):
-	'''Base class for watcher objects'''
+    '''Base class for watcher objects'''
 
-	sensitive = []
-	watching = []
-	trackers = []
-	default_hierarchy = None
+    sensitive = []
+    watching = []
+    trackers = []
+    default_hierarchy = None
 
-	_sensitive_ids = []
-	_watching_ids = []
+    _sensitive_ids = []
+    _watching_ids = []
 
-	tracker = None
-	parser = None
+    tracker = None
+    parser = None
 
-	values = None
-	activity = None
+    values = None
+    activity = None
 
-	def notify(self, activity, values):
-		'''Manage internal data updates prior to calling the expected to be overridden update method'''
-		self.values = values
-		self.activity = activity
-		self.update()
+    def notify(self, activity, values):
+        '''Manage internal data updates prior to calling the expected to be overridden update method'''
+        self.values = values
+        self.activity = activity
+        self.update()
 
-	def update(self):
-		'''Override update to only check on rising/ falling edges etc, prior to calling manage trackers'''
-		self.manage_trackers()
-
-
-	def manage_trackers(self):
-		'''Start new trackers, update existing trackers and clean up finished tracker objects'''
-		if self.start_tracker():
-			self.trackers.append(self.create_new_tracker())
-
-		for tracker in self.trackers:
-			tracker.notify(self.activity, self.values)
-
-		for tracker in self.trackers:
-			if tracker.finished:
-				self.trackers.remove(tracker)
+    def update(self):
+        '''Override update to only check on rising/ falling edges etc, prior to calling manage trackers'''
+        self.manage_trackers()
 
 
-	def start_tracker(self):
-		'''Override start_tracker to identify start of transaction conditions'''
-		return False
+    def manage_trackers(self):
+        '''Start new trackers, update existing trackers and clean up finished tracker objects'''
+        if self.start_tracker():
+            self.trackers.append(self.create_new_tracker())
+
+        for tracker in self.trackers:
+            tracker.notify(self.activity, self.values)
+
+        for tracker in self.trackers:
+            if tracker.finished:
+                self.trackers.remove(tracker)
 
 
-	def create_new_tracker(self):
-		'''Build an instance of the pre-defined transaction tracker objects'''
-		return self.tracker(self.parser, self)
+    def start_tracker(self):
+        '''Override start_tracker to identify start of transaction conditions'''
+        return False
 
 
-	def update_ids(self):
-		'''Callback after VCD header is parsed, to extract signal ids'''
-		self._sensitive_ids = {xmr : self.parser.get_id(xmr) for xmr in self.sensitive}
-		self._watching_ids = {xmr : self.parser.get_id(xmr) for xmr in self.watching}
+    def create_new_tracker(self):
+        '''Build an instance of the pre-defined transaction tracker objects'''
+        return self.tracker(self.parser, self)
 
 
-	def set_hierarchy(self, hierarchy):
-		'''Set the prefix path for signals'''
-		self.default_hierarchy = hierarchy
+    def update_ids(self):
+        '''Callback after VCD header is parsed, to extract signal ids'''
+        self._sensitive_ids = {xmr : self.parser.get_id(xmr) for xmr in self.sensitive}
+        self._watching_ids = {xmr : self.parser.get_id(xmr) for xmr in self.watching}
 
 
-	def add_sensitive(self, signal, hierarchy=None):
-		'''Add a signal to the sensitivity and watch lists'''
-		if not hierarchy:
-			hierarchy = self.default_hierarchy
-		self.sensitive.append(hierarchy + '.' + signal)
-		self.watching.append(hierarchy + '.' + signal)
+    def set_hierarchy(self, hierarchy):
+        '''Set the prefix path for signals'''
+        self.default_hierarchy = hierarchy
 
 
-	def add_watching(self, signal, hierarchy=None):
-		'''Register a signal to be watched'''
-		if not hierarchy:
-			hierarchy = self.default_hierarchy
-		self.watching.append(hierarchy + '.' + signal)
+    def add_sensitive(self, signal, hierarchy=None):
+        '''Add a signal to the sensitivity and watch lists'''
+        if not hierarchy:
+            hierarchy = self.default_hierarchy
+        self.sensitive.append(hierarchy + '.' + signal)
+        self.watching.append(hierarchy + '.' + signal)
 
 
-	def add_parser(self, parser):
-		self.parser = parser
+    def add_watching(self, signal, hierarchy=None):
+        '''Register a signal to be watched'''
+        if not hierarchy:
+            hierarchy = self.default_hierarchy
+        self.watching.append(hierarchy + '.' + signal)
 
 
-	def get_sensitive_ids(self):
-		'''Parser access function for sensitivity list ids'''
-		return self._sensitive_ids.values()
+    def add_parser(self, parser):
+        self.parser = parser
 
 
-	def get_watching_ids(self):
-		'''Parser access function for watch list ids'''
-		return self._watching_ids.values()
+    def get_sensitive_ids(self):
+        '''Parser access function for sensitivity list ids'''
+        return list(self._sensitive_ids.values())
 
 
-	def get_id(self, signal, hierarchy=None):
-		'''Look up the signal id from a signal name and optional path'''
-		if not hierarchy:
-			hierarchy = self.default_hierarchy
-
-		if not hierarchy:
-			return None
-
-		xmr = hierarchy + '.' + signal
-		if xmr in self._watching_ids:
-			return self._watching_ids[xmr]
-		else:
-			return None
+    def get_watching_ids(self):
+        '''Parser access function for watch list ids'''
+        return list(self._watching_ids.values())
 
 
-	def __getattribute__(self, name):
+    def get_id(self, signal, hierarchy=None):
+        '''Look up the signal id from a signal name and optional path'''
+        if not hierarchy:
+            hierarchy = self.default_hierarchy
 
-		if name in ['get_id', 'default_hierarchy', '_watching_ids']:
-			return object.__getattribute__(self, name)
+        if not hierarchy:
+            return None
 
-		id = self.get_id(name)
-		if id:
-			return self.values[id]
-		else:
-			return object.__getattribute__(self, name)
-
-
-	def get2val(self, signal):
-		'''Attempt to convert a scalar to a numerical 0/1 value'''
-		id = self.get_id(signal)
-		if id in self.values:
-			value = self.values[id]
-			if value in "xXzZ":
-				raise ValueError
-			return eval(value)
+        xmr = hierarchy + '.' + signal
+        if xmr in self._watching_ids:
+            return self._watching_ids[xmr]
+        else:
+            return None
 
 
-	def get_active_2val(self, signal):
-		'''Attempt to convert a scalar to a numerical 0/1 value'''
-		id = self.get_id(signal)
-		if id in self.activity:
-			value = self.activity[id]
-			if value in "xXzZ":
-				raise ValueError
-			return eval(value)
+    def __getattribute__(self, name):
+
+        if name in ['get_id', 'default_hierarchy', '_watching_ids']:
+            return object.__getattribute__(self, name)
+
+        id = self.get_id(name)
+        if id:
+            return self.values[id]
+        else:
+            return object.__getattribute__(self, name)
 
 
-	def set_tracker(self, tracker):
-		'''Set the class type of a tracker object, used for the tracker creation'''
-		self.tracker = tracker
+    def get2val(self, signal):
+        '''Attempt to convert a scalar to a numerical 0/1 value'''
+        id = self.get_id(signal)
+        if id in self.values:
+            value = self.values[id]
+            if value in "xXzZ":
+                raise ValueError
+            return eval(value)
+
+
+    def get_active_2val(self, signal):
+        '''Attempt to convert a scalar to a numerical 0/1 value'''
+        id = self.get_id(signal)
+        if id in self.activity:
+            value = self.activity[id]
+            if value in "xXzZ":
+                raise ValueError
+            return eval(value)
+
+
+    def set_tracker(self, tracker):
+        '''Set the class type of a tracker object, used for the tracker creation'''
+        self.tracker = tracker
 
 

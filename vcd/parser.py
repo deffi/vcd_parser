@@ -30,11 +30,11 @@
 
 '''
 
-from itertools import dropwhile, takewhile, izip
+from itertools import dropwhile, takewhile
 from collections import defaultdict
 import sys
 
-from watcher import VcdWatcher
+from .watcher import VcdWatcher
 
 class VcdParser(object):
   ''' A parser object for VCD files.  Reads definitions and walks through the value changes'''
@@ -97,7 +97,7 @@ class VcdParser(object):
   def show_nets(self):
     '''Dump all the XMR/ hierarchical paths in the VCD file'''
     for id in self.idcode2references:
-      print self.get_xmr(id)
+      print(self.get_xmr(id))
 
 
   def get_xmr(self, id):
@@ -138,9 +138,9 @@ class VcdParser(object):
     current_time = self.now
 
     if self.debug: 
-      print "Current time is ", self.now, 'changing to ', next_time
+      print("Current time is ", self.now, 'changing to ', next_time)
       for change in self.changes:
-        print self.get_xmr(change), self.changes[change]
+        print(self.get_xmr(change), self.changes[change])
 
     # Check sensitivity lists to see if a watcher needs to be notified of changes
     for watcher in self.watchers:
@@ -196,7 +196,7 @@ class VcdParser(object):
         elif c in '01xXzZ':
           self.scaler_value_change(value=c, id=rest)
         elif c in 'bBrR':
-          self.vector_value_change(format=c.lower(), number=rest, id=tokeniser.next())
+          self.vector_value_change(format=c.lower(), number=rest, id=next(tokeniser))
         else:
           raise "Don't understand: %s After %i words" % (token, count)
 
@@ -206,7 +206,7 @@ class VcdParser(object):
 
 
   def drop_declaration(self, tokeniser, keyword):
-    dropwhile(lambda x: x != "$end", tokeniser).next()
+    next(dropwhile(lambda x: x != "$end", tokeniser))
 
 
   def save_declaration(self, tokeniser, keyword):
@@ -230,7 +230,7 @@ class VcdParser(object):
     
   def vcd_upscope(self, tokeniser, keyword):
     self.scope.pop()
-    tokeniser.next()
+    next(tokeniser)
     
     
   def vcd_var(self, tokeniser, keyword):
